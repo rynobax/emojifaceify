@@ -1,0 +1,33 @@
+{
+  "name": "emojifaceify",
+  "version": "1.0.0",
+  "description": "A discord bot for replacing faces with emojis. Node.js + Typescript.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon dist/index.js",
+    "compile": "node_modules/.bin/tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rynobax/emojifaceify.git"
+  },
+  "author": "Ryan Baxley",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rynobax/emojifaceify/issues"
+  },
+  "homepage": "https://github.com/rynobax/emojifaceify#readme",
+  "devDependencies": {
+    "@types/node": "^7.0.5",
+    "bluebird": "^3.5.0",
+    "gulp": "^3.9.1",
+    "gulp-tslint": "^7.1.0",
+    "gulp-typescript": "^3.1.1",
+    "typescript": "^2.2.1"
+  },
+  "dependencies": {
+    "discord.js": "^11.0.0",
+    "opencv": "^6.0.0",
+    "request": "^2.80.0"
+  }
+}
