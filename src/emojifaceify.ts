@@ -2,27 +2,55 @@ import Discord = require('discord.js');
 import request = require('request');
 import fs = require('fs');
 import uuid = require('uuid/v4');
+import {getCustomEmojis, getEmojis} from './emoji';
 import {replaceFaces} from './face';
 
 import Promise = require('bluebird');
 Promise.longStackTraces();
 
 export function emojifaceify(message: Discord.Message): void {
-    extractImages(message)
-        .then(replaceFaces)
-        .then((res: any) => {
-            console.log('res: ', res);
+    Promise.all([extractImages(message), getEmojis(message), getCustomEmojis(message)])
+        .then((resArr) => {
+            const images = resArr[0];
+            const emojis = resArr[1];
+            emojis.push(...resArr[2]);
+            console.log('emojis: ', emojis);
+            if (emojis.length < 1) {
+                console.log('hi');
+                throw 'You gotta send me an emoji bro';
+            }
+            return replaceFaces(images, emojis);
+        })
+        .then((res) => {
+            res.forEach((img) => {
+                const outFilePath = getOutFilePath(uuid());
+                img.write(outFilePath, (err) => {
+                    if (err) {
+                        throw err;
+                    }else {
+                        message.reply('Here you go!', {
+                            file: outFilePath,
+                        })
+                        .then(() => {
+                            return fs.unlink(outFilePath, (fserr) => {
+                                if (fserr) { throw fserr; }
+                            });
+                        })
+                        .catch(Promise.reject);
+                    }
+                });
+            });
         })
         .catch((err) => {
-            console.log('err: ', err);
+            message.reply(err);
         });
 };
 
 function extractImages(message: Discord.Message): Promise<string[]> {
-    // Attachment
+    // Get attachment
     const attachmentFds = getAttachmentFds(message.attachments);
 
-    // Embeds
+    // Get embeds
     const embedFds = getEmbedFds(message.embeds);
 
     return Promise.all([attachmentFds, embedFds])
@@ -70,7 +98,7 @@ function getFilestreamFromEmbed(embed: Discord.MessageEmbed): Promise<string> {
 function getFileStreamFromUrl(url: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const fileName = uuid() + '.' + getExtension(url);
-        const filePath = getFilePath(fileName);
+        const filePath = getInFilePath(fileName);
         request(url)
             .pipe(fs.createWriteStream(filePath))
             .on('finish', () => {
@@ -79,15 +107,19 @@ function getFileStreamFromUrl(url: string): Promise<string> {
                         console.log(err);
                         resolve();
                     }else {
-                        resolve(fileName);
+                        resolve(filePath);
                     }
                 });
             });
     });
 }
 
-function getFilePath(imageName: string): string {
+function getInFilePath(imageName: string): string {
     return 'img/in/' + imageName;
+}
+
+function getOutFilePath(imageName: string): string {
+    return 'img/out/' + imageName + '.png';
 }
 
 function getExtension(originalName: string): string {

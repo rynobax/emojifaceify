@@ -8,6 +8,10 @@ client.on('ready', () => {
 });
 
 client.on('message', (message: Discord.Message) => {
+    if (message.author.bot === true) {
+        return;
+    }
+
     emojifaceify(message);
 });
 
